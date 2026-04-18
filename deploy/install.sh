@@ -140,7 +140,6 @@ write_env_file() {
     api_key="$(awk -F= '/^ANTHROPIC_API_KEY=/{print substr($0, index($0,"=")+1)}' "$ENV_FILE")"
   fi
   export ANTHROPIC_API_KEY="$api_key"
-  prompt_secret_if_missing "ANTHROPIC_API_KEY" "Enter ANTHROPIC_API_KEY"
 
   info "Writing environment file to ${ENV_FILE}."
   mkdir -p "$ENV_DIR"
