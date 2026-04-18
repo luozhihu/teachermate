@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block body %}
+  <main class="landing-page">
+    <section class="hero-card">
+      <div class="hero-icon" aria-hidden="true">
+        <svg viewBox="0 0 48 48" role="img">
+          <path d="M24 12c-4-2.3-8.6-3.5-13.8-3.6-1.2 0-2.2.9-2.2 2.1v24.1c0 1.2 1 2.1 2.2 2.1 5.2.1 9.8 1.2 13.8 3.3 4-2.1 8.6-3.2 13.8-3.3 1.2 0 2.2-.9 2.2-2.1V10.5c0-1.2-1-2.1-2.2-2.1-5.2.1-9.8 1.3-13.8 3.6Zm-1.4 24.5c-2.9-1.3-6.2-2-10-2.2V12.7c3.8.2 7.1.9 10 2.2v21.6Zm2.8 0V14.9c2.9-1.3 6.2-2 10-2.2v21.6c-3.8.2-7.1.9-10 2.2Z" />
+        </svg>
+      </div>
+
+      <h1 class="hero-title">
+        <span class="plain">把备课时间</span>
+        <span class="accent">还给你</span>
+      </h1>
+
+      <div class="hero-comparison">
+        <div class="hero-comparison-item">
+          <span class="hero-comparison-value muted">2h+</span>
+          <span class="hero-comparison-label">传统备课</span>
+        </div>
+        <span class="hero-comparison-divider"></span>
+        <div class="hero-comparison-item">
+          <span class="hero-comparison-value accent">~10min</span>
+          <span class="hero-comparison-label">TeacherMate</span>
+        </div>
+      </div>
+
+      <p class="hero-copy">写教案、出习题、整理资料</p>
+      <p class="hero-copy">这些重复工作，让 AI 帮你完成</p>
+
+      <a class="hero-cta" href="/workspace">试试看，很提效 →</a>
+    </section>
+  </main>
+{% endblock %}

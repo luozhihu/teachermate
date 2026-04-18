@@ -1,0 +1,22 @@
+{% if compile_runtime_has_data %}
+<div
+  id="compile-runtime-panel"
+  hx-get="/compile/runtime?job_id={{ compile_runtime_job_id }}"
+  hx-swap="outerHTML"
+  {% if compile_runtime_polling %}hx-trigger="every 1s"{% endif %}
+>
+  <div class="list-block">
+    <h3>编译过程</h3>
+    <p class="runtime-meta">
+      任务：{{ compile_runtime_job_id }} · 状态：{{ compile_runtime_status }}
+      {% if compile_runtime_source %} · 来源：{{ compile_runtime_source }}{% endif %}
+    </p>
+    {% if compile_runtime_lines %}
+      <pre class="compile-log">{% for line in compile_runtime_lines %}{{ line }}
+{% endfor %}</pre>
+    {% else %}
+      <p class="empty">编译正在启动，等待输出...</p>
+    {% endif %}
+  </div>
+</div>
+{% endif %}

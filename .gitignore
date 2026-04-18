@@ -1,0 +1,26 @@
+.DS_Store
+
+# Python runtime and caches
+.venv/
+.pytest_cache/
+**/__pycache__/
+*.py[cod]
+
+# Local agent/runtime state
+.omx/
+.playwright-mcp/
+.claude/settings.local.json
+
+# App runtime data
+imports/
+artifacts/
+state/
+raw/
+wiki/
+karpathy-llm-wiki-main/
+
+# Local scratch files
+*.swp
+*.swo
+*~
+physics_test.txt

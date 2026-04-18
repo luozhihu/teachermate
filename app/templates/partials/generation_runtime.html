@@ -1,0 +1,23 @@
+{% if runtime.has_data %}
+<div
+  id="generation-runtime-{{ runtime.kind_key }}"
+  class="generation-runtime-panel"
+  hx-get="/generate/runtime?kind={{ runtime.kind }}"
+  hx-swap="outerHTML"
+  {% if runtime.polling %}hx-trigger="every 1s"{% endif %}
+>
+  <div class="list-block">
+    <h3>{{ runtime.label }}过程</h3>
+    <p class="runtime-meta">状态：{{ runtime.status }}{% if runtime.updated_at %} · 更新时间：{{ runtime.updated_at }}{% endif %}</p>
+    {% if runtime.lines %}
+      <pre class="compile-log">{% for line in runtime.lines %}{{ line }}
+{% endfor %}</pre>
+    {% else %}
+      <p class="empty">任务已启动，等待输出...</p>
+    {% endif %}
+    {% if runtime.status == "failed" and runtime.error %}
+      <p class="runtime-error">失败：{{ runtime.error }}</p>
+    {% endif %}
+  </div>
+</div>
+{% endif %}

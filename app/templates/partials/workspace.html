@@ -1,0 +1,273 @@
+<div id="workspace">
+  <div class="studio-shell">
+    <input class="nav-toggle" type="radio" name="center-nav" id="nav-chat" {% if active_center_tab == "chat" %}checked{% endif %} />
+    <input class="nav-toggle" type="radio" name="center-nav" id="nav-import" {% if active_center_tab == "import" %}checked{% endif %} />
+    <input class="nav-toggle" type="radio" name="center-nav" id="nav-exam" {% if active_center_tab == "exam" %}checked{% endif %} />
+    <input class="nav-toggle" type="radio" name="center-nav" id="nav-lesson" {% if active_center_tab == "lesson" %}checked{% endif %} />
+
+    <aside class="nav-rail">
+      <p class="eyebrow">TeacherMate</p>
+      <h1>教师知识工作台</h1>
+      <p class="lead">左侧导航，右侧按菜单展示对应功能。</p>
+      <nav class="nav-menu">
+        <label class="nav-item" for="nav-chat">对话知识库</label>
+        <label class="nav-item" for="nav-import">导入资料</label>
+        <label class="nav-item" for="nav-exam">生成试卷</label>
+        <label class="nav-item" for="nav-lesson">生成备课文档</label>
+      </nav>
+    </aside>
+
+    <main class="center-stage">
+      <!-- ===== Import Panel ===== -->
+      <article class="center-panel panel-import">
+        <h2>导入资料</h2>
+        {% if active_center_tab == "import" and error %}
+          <p class="panel-feedback error">{{ error }}</p>
+        {% endif %}
+        {% if active_center_tab == "import" and success %}
+          <p class="panel-feedback success">{{ success }}</p>
+        {% endif %}
+        <form
+          class="import-form"
+          hx-post="/imports"
+          hx-target="#workspace"
+          hx-swap="outerHTML"
+          hx-indicator="this"
+          hx-encoding="multipart/form-data"
+          enctype="multipart/form-data"
+        >
+          <input type="hidden" name="center_tab" value="import" />
+          <label>上传文件</label>
+          <div class="file-upload-wrapper">
+            <input type="file" name="upload" accept=".txt,.md,.pdf,.docx" id="file-upload" />
+            <label for="file-upload" class="file-upload-label">
+              <span id="file-upload-name">点击上传文件</span>
+              <span class="file-upload-hint">支持 .txt, .md, .pdf, .docx</span>
+            </label>
+          </div>
+          <script>
+            var fileInput = document.getElementById('file-upload');
+            if (fileInput) {
+              fileInput.addEventListener('change', function() {
+                var nameEl = document.getElementById('file-upload-name');
+                if (this.files && this.files.length > 0) {
+                  nameEl.textContent = this.files[0].name;
+                } else {
+                  nameEl.textContent = '点击上传文件';
+                }
+              });
+            }
+          </script>
+          <label>或粘贴文本</label>
+          <textarea name="pasted_text" rows="7" placeholder="把原始资料粘贴到这里"></textarea>
+          <button type="submit">导入并自动编译 <span class="spinner htmx-indicator"></span></button>
+        </form>
+
+        {% include "partials/compile_runtime.html" %}
+
+        <div class="list-block">
+          <h3>最近导入与自动编译（3）</h3>
+          {% if import_activity_rows %}
+            <ul class="item-list import-activity-list">
+              {% for item in import_activity_rows %}
+                <li>
+                  <strong>{{ item.source_name }}</strong>
+                  <p class="item-subline">{{ item.source_type_label }} · {{ item.created_at }}</p>
+                  <div class="activity-meta">
+                    <span class="status-indicator">
+                      <span class="status-dot {{ item.status_tone }}"></span>
+                      {{ item.status_label }}
+                    </span>
+                  </div>
+                  <p class="activity-result">{{ item.compile_result }}</p>
+                  <code>{{ item.markdown_path }}</code>
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="empty">还没有导入资料。</p>
+          {% endif %}
+        </div>
+      </article>
+
+      <!-- ===== Exam Panel ===== -->
+      <article class="center-panel panel-exam">
+        <h2>生成试卷</h2>
+        {% if active_center_tab == "exam" and error %}
+          <p class="panel-feedback error">{{ error }}</p>
+        {% endif %}
+        {% if active_center_tab == "exam" and success %}
+          <p class="panel-feedback success">{{ success }}</p>
+        {% endif %}
+        <form hx-post="/generate/exam" hx-target="#workspace" hx-swap="outerHTML" hx-indicator="this">
+          <input type="hidden" name="session_id" value="{{ active_session_id }}" />
+          <input type="hidden" name="center_tab" value="exam" />
+          <div class="form-group">
+            <label>年级</label>
+            <input type="text" name="grade" placeholder="年级，如 八年级" required />
+          </div>
+          <div class="form-group">
+            <label>学科</label>
+            <input type="text" name="subject" placeholder="学科，如 物理" required />
+          </div>
+          <div class="form-group">
+            <label>难度</label>
+            <input type="text" name="difficulty" placeholder="难度，如 中等" required />
+          </div>
+          <div class="form-group">
+            <label>时长</label>
+            <input type="text" name="duration" placeholder="时长，如 45分钟" required />
+          </div>
+          <div class="form-group">
+            <label>考试重点</label>
+            <input type="text" name="exam_focus" placeholder="考试重点（可选）" />
+          </div>
+          <button type="submit">基于知识库生成试卷 <span class="spinner htmx-indicator"></span></button>
+        </form>
+
+        {% with runtime=generation_runtime.exam %}{% include "partials/generation_runtime.html" %}{% endwith %}
+
+        <div class="list-block">
+          <h3>最近试卷</h3>
+          {% set exam_ns = namespace(has=false) %}
+          <ul class="item-list">
+            {% for item in artifacts %}
+              {% if item.artifact_type == "exam" %}
+                {% set exam_ns.has = true %}
+                <li>
+                  <strong>{{ item.title }}</strong>
+                  <span>{{ item.topic }}</span>
+                  <a href="{{ item.markdown_path }}" target="_blank"><code>{{ item.markdown_path }}</code></a>
+                </li>
+              {% endif %}
+            {% endfor %}
+          </ul>
+          {% if not exam_ns.has %}
+            <p class="empty">还没有生成试卷。</p>
+          {% endif %}
+        </div>
+      </article>
+
+      <!-- ===== Lesson Plan Panel ===== -->
+      <article class="center-panel panel-lesson">
+        <h2>生成备课文档</h2>
+        {% if active_center_tab == "lesson" and error %}
+          <p class="panel-feedback error">{{ error }}</p>
+        {% endif %}
+        {% if active_center_tab == "lesson" and success %}
+          <p class="panel-feedback success">{{ success }}</p>
+        {% endif %}
+        <form hx-post="/generate/lesson-plan" hx-target="#workspace" hx-swap="outerHTML" hx-indicator="this">
+          <input type="hidden" name="session_id" value="{{ active_session_id }}" />
+          <input type="hidden" name="center_tab" value="lesson" />
+          <div class="form-group">
+            <label>年级</label>
+            <input type="text" name="grade" placeholder="年级，如 八年级" required />
+          </div>
+          <div class="form-group">
+            <label>学科</label>
+            <input type="text" name="subject" placeholder="学科，如 物理" required />
+          </div>
+          <div class="form-group">
+            <label>课时</label>
+            <input type="text" name="periods" placeholder="课时，如 1课时" required />
+          </div>
+          <div class="form-group">
+            <label>教学重点</label>
+            <input type="text" name="focus" placeholder="教学重点，如 实验现象理解" required />
+          </div>
+          <button type="submit">基于知识库生成备课文档 <span class="spinner htmx-indicator"></span></button>
+        </form>
+
+        {% with runtime=generation_runtime.lesson_plan %}{% include "partials/generation_runtime.html" %}{% endwith %}
+
+        <div class="list-block">
+          <h3>最近备课文档</h3>
+          {% set lesson_ns = namespace(has=false) %}
+          <ul class="item-list">
+            {% for item in artifacts %}
+              {% if item.artifact_type == "lesson-plan" %}
+                {% set lesson_ns.has = true %}
+                <li>
+                  <strong>{{ item.title }}</strong>
+                  <span>{{ item.topic }}</span>
+                  <a href="{{ item.markdown_path }}" target="_blank"><code>{{ item.markdown_path }}</code></a>
+                </li>
+              {% endif %}
+            {% endfor %}
+          </ul>
+          {% if not lesson_ns.has %}
+            <p class="empty">还没有生成备课文档。</p>
+          {% endif %}
+        </div>
+      </article>
+
+      <!-- ===== Chat Panel ===== -->
+      <article class="center-panel panel-chat">
+        <div class="chat-header">
+          <h2>对话知识库</h2>
+          <p class="lead">支持多会话，问答可流式输出。</p>
+        </div>
+
+        <div class="chat-window">
+          {% if chat_turns %}
+            {% for turn in chat_turns %}
+              <div class="chat-bubble user">
+                <p class="role">你</p>
+                <p>{{ turn.question }}</p>
+              </div>
+              <div class="chat-bubble assistant">
+                <p class="role">Claude</p>
+                <div class="chat-markdown">{{ turn.answer_html | safe }}</div>
+                {% if turn.citations %}
+                  <div class="citations">
+                    {% for citation in turn.citations %}
+                      <a href="{{ citation.path }}" target="_blank">{{ citation.title }}</a>
+                    {% endfor %}
+                  </div>
+                {% endif %}
+              </div>
+            {% endfor %}
+          {% endif %}
+          {% include "partials/chat_runtime.html" %}
+        </div>
+
+        <div class="chat-input-bubble">
+          <div class="chat-bubble-session-switcher">
+            <form hx-post="/chat/sessions/select" hx-target="#workspace" hx-swap="outerHTML" class="session-select-form">
+              <input type="hidden" name="center_tab" value="chat" />
+              <select name="session_id" class="session-select-inline" hx-on:change="this.form.submit()" required>
+                {% for session in chat_sessions %}
+                  <option value="{{ session.session_id }}" {% if session.session_id == active_session_id %}selected{% endif %}>
+                    {{ session.title }}
+                  </option>
+                {% endfor %}
+              </select>
+            </form>
+            <form hx-post="/chat/sessions/create" hx-target="#workspace" hx-swap="outerHTML" class="session-create-form">
+              <input type="hidden" name="center_tab" value="chat" />
+              <button type="submit" class="session-new-btn">新建会话</button>
+            </form>
+          </div>
+          <form hx-post="/chat" hx-target="#workspace" hx-swap="outerHTML" hx-indicator="this" class="chat-bubble-form">
+            <input type="hidden" name="session_id" value="{{ active_session_id }}" />
+            <input type="hidden" name="center_tab" value="chat" />
+            <textarea
+              name="question"
+              rows="1"
+              placeholder="输入你的问题..."
+              class="chat-bubble-input"
+              onkeydown="if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) { event.preventDefault(); this.form.requestSubmit(); }"
+              required
+            ></textarea>
+            <button type="submit" class="chat-bubble-send" aria-label="发送">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+              </svg>
+            </button>
+          </form>
+        </div>
+      </article>
+    </main>
+  </div>
+</div>

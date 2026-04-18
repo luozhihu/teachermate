@@ -1,0 +1,31 @@
+<div
+  id="chat-runtime-panel"
+  {% if chat_runtime_status == "completed" and active_center_tab == "chat" and chat_runtime_has_data %}
+    hx-get="/workspace?center_tab=chat&session_id={{ chat_runtime_session_id }}"
+    hx-target="#workspace"
+    hx-swap="outerHTML"
+    hx-trigger="load delay:80ms"
+  {% elif chat_runtime_has_data %}
+    hx-get="/chat/runtime?session_id={{ chat_runtime_session_id }}&center_tab={{ active_center_tab }}"
+    hx-swap="outerHTML"
+    {% if chat_runtime_polling %}hx-trigger="every 1s"{% endif %}
+  {% endif %}
+>
+  {% if chat_runtime_has_data %}
+    <div class="chat-bubble user runtime">
+      <p class="role">你</p>
+      <p>{{ chat_runtime_question }}</p>
+    </div>
+    <div class="chat-bubble assistant runtime">
+      <p class="role">Claude{% if chat_runtime_status == "running" %}（生成中）{% endif %}</p>
+      {% if chat_runtime_answer_markdown %}
+        <div class="chat-markdown">{{ chat_runtime_answer_html | safe }}</div>
+      {% else %}
+        <p>正在生成回答...</p>
+      {% endif %}
+      {% if chat_runtime_status == "failed" %}
+        <p class="runtime-error">问答失败：{{ chat_runtime_error }}</p>
+      {% endif %}
+    </div>
+  {% endif %}
+</div>
