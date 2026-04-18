@@ -1,5 +1,17 @@
 # TeacherMate MVP
 
+## One-command deployment
+
+For a server deployment with `systemd + nginx + Basic Auth`, run:
+
+```bash
+export ANTHROPIC_API_KEY="your_real_api_key"
+export BASIC_AUTH_PASSWORD="choose_a_strong_password"
+bash deploy/install.sh
+```
+
+The full deployment guide is in [`deploy/README.md`](deploy/README.md).
+
 Single-user teacher knowledge base website built with FastAPI, HTMX, MarkItDown, Claude Agent SDK, and the `karpathy-llm-wiki` skill.
 
 ## What it does
@@ -55,3 +67,7 @@ artifacts/      generated exams and lesson plans
 state/          json metadata for imports, jobs, chat turns, and artifacts
 .claude/skills/ project-local Claude skills
 ```
+
+## Deployment
+
+For a single-server production-style deployment using `systemd + nginx + Basic Auth`, see [`deploy/README.md`](deploy/README.md).

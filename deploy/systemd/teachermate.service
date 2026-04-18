@@ -1,0 +1,24 @@
+[Unit]
+Description=TeacherMate FastAPI service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=/root/project/teachermate
+EnvironmentFile=/etc/teachermate/teachermate.env
+Environment=PATH=/root/project/teachermate/.venv/bin:/root/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ExecStart=/root/project/teachermate/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8081 --workers 1
+Restart=always
+RestartSec=5
+KillSignal=SIGINT
+TimeoutStopSec=30
+NoNewPrivileges=yes
+PrivateTmp=yes
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
