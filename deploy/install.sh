@@ -217,6 +217,12 @@ configure_basic_auth() {
   local password="${BASIC_AUTH_PASSWORD:-}"
   if [[ -z "$password" && -f "$HTPASSWD_PATH" ]]; then
     info "Basic Auth file exists, keeping existing credentials."
+    if getent group www-data >/dev/null 2>&1; then
+      chown root:www-data "$HTPASSWD_PATH"
+      chmod 640 "$HTPASSWD_PATH"
+    else
+      chmod 644 "$HTPASSWD_PATH"
+    fi
     return
   fi
 
@@ -224,7 +230,12 @@ configure_basic_auth() {
   prompt_secret_if_missing "BASIC_AUTH_PASSWORD" "Enter Basic Auth password for ${BASIC_AUTH_USER}"
   info "Writing Basic Auth credentials to ${HTPASSWD_PATH}."
   htpasswd -cb "$HTPASSWD_PATH" "$BASIC_AUTH_USER" "$BASIC_AUTH_PASSWORD" >/dev/null
-  chmod 640 "$HTPASSWD_PATH"
+  if getent group www-data >/dev/null 2>&1; then
+    chown root:www-data "$HTPASSWD_PATH"
+    chmod 640 "$HTPASSWD_PATH"
+  else
+    chmod 644 "$HTPASSWD_PATH"
+  fi
 }
 
 enable_services() {
