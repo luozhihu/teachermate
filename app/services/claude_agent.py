@@ -355,7 +355,7 @@ Only complete remaining ingest/update work, then output a short summary.
                 "deliverable": {
                     "type": "object",
                     "properties": {
-                        "type": {"type": "string", "enum": ["exam", "lesson-plan"]},
+                        "type": {"type": "string", "enum": ["research-topic", "research-protocol"]},
                         "title": {"type": "string"},
                         "topic": {"type": "string"},
                         "markdown": {"type": "string"},
@@ -376,8 +376,8 @@ Rules:
 - Cite every factual section with wiki article references.
 - If the wiki is empty or insufficient, say so plainly.
 - Keep citations as project-root-relative paths like wiki/topic/article.md.
-- If the user asks to generate an exam paper or lesson plan, also return `deliverable`.
-- `deliverable.markdown` must be complete teacher-ready content grounded in wiki + current conversation context.
+- If the user asks to generate a research topic proposal or research protocol, also return `deliverable`.
+- `deliverable.markdown` must be complete researcher-ready content grounded in wiki + current conversation context.
 - If user intent is normal QA, omit `deliverable`.
 - Do not write or edit any file.
 - Do not ask for permissions.
@@ -403,7 +403,7 @@ Question:
             structured["claude_session_id"] = claude_session_id
         return structured
 
-    async def generate_exam(
+    async def generate_research_topic(
         self,
         payload: Dict[str, Any],
         on_progress: Optional[Callable[[str], None]] = None,
@@ -431,36 +431,36 @@ Question:
             "required": ["title", "topic", "markdown", "citations"],
             "additionalProperties": False,
         }
-        focus_block = ""
-        if payload.get("exam_focus", "").strip():
-            focus_block = "\nExam Focus: {0}".format(payload["exam_focus"].strip())
+        objectives_block = ""
+        if payload.get("research_objectives", "").strip():
+            objectives_block = "\nResearch Objectives: {0}".format(payload["research_objectives"].strip())
         context_block = ""
         if payload.get("conversation_context", "").strip():
             context_block = "\nConversation context:\n{0}".format(payload["conversation_context"].strip())
         prompt = """
-Create a teacher exam draft in Markdown.
+Create a research topic proposal document in Markdown.
 
 Constraints:
-- Base the exam directly on the current wiki knowledge base.
+- Base the topic proposal directly on the current wiki knowledge base.
 - Read wiki files directly (do not rely on hidden tools) and cite the wiki sources you used.
-- Include title, metadata, sections, questions, and answer key.
-- Keep the exam editable for a teacher.
+- Include title, background, significance, literature review outline, and expected outcomes.
+- Keep the document editable for a researcher.
 - Keep all source references at the end under a "Sources" section.
 - Do not write or edit any file.
 - Do not ask for permissions.
 - Return only the structured JSON that matches the output schema.
 
-Grade: {grade}
-Subject: {subject}
-Difficulty: {difficulty}
-Duration: {duration}
-{focus}{context}
+Research Field: {research_field}
+Research Direction: {research_direction}
+Novelty Level: {novelty_level}
+Expected Pages: {expected_pages}
+{objectives}{context}
 """.strip().format(
-            grade=payload["grade"],
-            subject=payload["subject"],
-            difficulty=payload["difficulty"],
-            duration=payload["duration"],
-            focus=focus_block,
+            research_field=payload["research_field"],
+            research_direction=payload["research_direction"],
+            novelty_level=payload["novelty_level"],
+            expected_pages=payload["expected_pages"],
+            objectives=objectives_block,
             context=context_block,
         )
         options = self._base_options(
@@ -473,10 +473,10 @@ Duration: {duration}
         )
         raw_text, structured, _ = await self._run_query(prompt, options, on_progress=on_progress)
         if not structured:
-            raise RuntimeError("Claude did not return structured exam output.\n{0}".format(raw_text))
+            raise RuntimeError("Claude did not return structured research-topic output.\n{0}".format(raw_text))
         return structured
 
-    async def generate_lesson_plan(
+    async def generate_research_protocol(
         self,
         payload: Dict[str, Any],
         on_progress: Optional[Callable[[str], None]] = None,
@@ -508,28 +508,28 @@ Duration: {duration}
         if payload.get("conversation_context", "").strip():
             context_block = "\nConversation context:\n{0}".format(payload["conversation_context"].strip())
         prompt = """
-Create a lesson-plan draft in Markdown.
+Create a research protocol document in Markdown.
 
 Constraints:
-- Base the plan directly on the current wiki knowledge base.
+- Base the protocol directly on the current wiki knowledge base.
 - Read wiki files directly (do not rely on hidden tools) and cite the wiki sources you used.
-- Include teaching objectives, key points, lesson flow, teacher prompts, and homework.
-- Keep the plan practical for a real teacher to edit.
+- Include study objectives, design methodology, sample size estimation, data collection plan, and timeline.
+- Keep the protocol practical for a real researcher to edit.
 - Keep all source references at the end under a "Sources" section.
 - Do not write or edit any file.
 - Do not ask for permissions.
 - Return only the structured JSON that matches the output schema.
 
-Grade: {grade}
-Subject: {subject}
-Periods: {periods}
-Teaching Focus: {focus}
+Research Field: {research_field}
+Study Design: {study_design}
+Timeline: {timeline}
+Objectives: {objectives}
 {context}
 """.strip().format(
-            grade=payload["grade"],
-            subject=payload["subject"],
-            periods=payload["periods"],
-            focus=payload["focus"],
+            research_field=payload["research_field"],
+            study_design=payload["study_design"],
+            timeline=payload["timeline"],
+            objectives=payload["objectives"],
             context=context_block,
         )
         options = self._base_options(
@@ -542,5 +542,5 @@ Teaching Focus: {focus}
         )
         raw_text, structured, _ = await self._run_query(prompt, options, on_progress=on_progress)
         if not structured:
-            raise RuntimeError("Claude did not return structured lesson-plan output.\n{0}".format(raw_text))
+            raise RuntimeError("Claude did not return structured research-protocol output.\n{0}".format(raw_text))
         return structured

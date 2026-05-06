@@ -21,7 +21,7 @@ settings = get_settings()
 store = LocalStore(settings)
 agent_service = ClaudeAgentService(settings)
 
-app = FastAPI(title="TeacherMate MVP")
+app = FastAPI(title="MediMate MVP")
 app.mount("/static", StaticFiles(directory=str(settings.root_dir / "app" / "static")), name="static")
 app.mount("/imports", StaticFiles(directory=str(settings.imports_dir)), name="imports")
 app.mount("/raw", StaticFiles(directory=str(settings.raw_dir)), name="raw")
@@ -38,7 +38,7 @@ _chat_runtime_lock = Lock()
 _chat_runtime: Dict[str, Dict[str, Any]] = {}
 _generation_runtime_lock = Lock()
 _generation_runtime: Dict[str, Dict[str, Any]] = {}
-ALLOWED_CENTER_TABS = {"import", "exam", "lesson", "chat"}
+ALLOWED_CENTER_TABS = {"import", "topic", "protocol", "chat"}
 
 
 def _initialize_compile_runtime(job_id: str, import_id: str, source_name: str) -> None:
@@ -186,14 +186,14 @@ def _snapshot_chat_runtime(session_id: str) -> Optional[Dict[str, Any]]:
 
 
 def _generation_kind_meta(kind: str) -> Dict[str, str]:
-    if kind == "lesson-plan":
+    if kind == "research-protocol":
         return {
-            "label": "备课文档",
-            "kind_key": "lesson_plan",
+            "label": "研究方案",
+            "kind_key": "research_protocol",
         }
     return {
-        "label": "试卷",
-        "kind_key": "exam",
+        "label": "选题文档",
+        "kind_key": "research_topic",
     }
 
 
@@ -344,8 +344,8 @@ def build_chat_runtime_context(session_id: str = "") -> Dict[str, Any]:
 def build_generation_runtime_context() -> Dict[str, Any]:
     return {
         "generation_runtime": {
-            "exam": _snapshot_generation_runtime("exam"),
-            "lesson_plan": _snapshot_generation_runtime("lesson-plan"),
+            "research_topic": _snapshot_generation_runtime("research-topic"),
+            "research_protocol": _snapshot_generation_runtime("research-protocol"),
         }
     }
 
@@ -353,19 +353,19 @@ def build_generation_runtime_context() -> Dict[str, Any]:
 def _status_label_and_tone(import_status: str, job_status: str = "") -> Tuple[str, str]:
     key = (job_status or import_status or "").strip().lower()
     mapping = {
-        "running": ("编译中", "running"),
-        "compiling": ("编译中", "running"),
-        "completed": ("已编译", "success"),
-        "compiled": ("已编译", "success"),
-        "failed": ("编译失败", "failed"),
-        "pending": ("待编译", "pending"),
+        "running": ("整理中", "running"),
+        "compiling": ("整理中", "running"),
+        "completed": ("已整理", "success"),
+        "compiled": ("已整理", "success"),
+        "failed": ("整理失败", "failed"),
+        "pending": ("待整理", "pending"),
     }
     return mapping.get(key, ("状态未知", "pending"))
 
 
 def _source_type_label(source_type: str) -> str:
     if source_type == "upload":
-        return "上传文件"
+        return "上传文献"
     if source_type == "paste":
         return "粘贴文本"
     return source_type or "未知来源"
@@ -542,8 +542,8 @@ async def chat_runtime(request: Request, session_id: str = "", center_tab: str =
 
 
 @app.get("/generate/runtime", response_class=HTMLResponse)
-async def generate_runtime(request: Request, kind: str = "exam") -> HTMLResponse:
-    target_kind = "lesson-plan" if kind == "lesson-plan" else "exam"
+async def generate_runtime(request: Request, kind: str = "research-topic") -> HTMLResponse:
+    target_kind = "research-protocol" if kind == "research-protocol" else "research-topic"
     context = {
         "request": request,
         "runtime": _snapshot_generation_runtime(target_kind),
@@ -657,7 +657,7 @@ async def _run_chat_task(session_id: str, question: str, claude_session_id: Opti
         )
         if isinstance(deliverable, dict):
             deliverable_type = deliverable.get("type")
-            if deliverable_type in {"exam", "lesson-plan"}:
+            if deliverable_type in {"research-topic", "research-protocol"}:
                 store.save_artifact(
                     artifact_type=deliverable_type,
                     title=deliverable.get("title", "{0} draft".format(deliverable_type)),
@@ -686,54 +686,54 @@ def _generation_running(kind: str) -> bool:
     return runtime.get("status") == "running"
 
 
-async def _run_generate_exam_task(active_session_id: str, payload: Dict[str, Any]) -> None:
+async def _run_generate_topic_task(active_session_id: str, payload: Dict[str, Any]) -> None:
     del active_session_id
 
     def on_progress(text: str) -> None:
-        _append_generation_runtime("exam", text)
+        _append_generation_runtime("research-topic", text)
 
-    _append_generation_runtime("exam", "开始读取知识库并生成试卷。")
+    _append_generation_runtime("research-topic", "开始读取知识库并生成选题文档。")
     try:
-        result = await agent_service.generate_exam(payload, on_progress=on_progress)
+        result = await agent_service.generate_research_topic(payload, on_progress=on_progress)
         citations = result.get("citations", [])
         artifact = store.save_artifact(
-            artifact_type="exam",
+            artifact_type="research-topic",
             title=result["title"],
-            topic=result["topic"] if result["topic"] not in ["", "general", "exam", "lesson-plan"] else infer_topic_from_citations(citations),
+            topic=result["topic"] if result["topic"] not in ["", "general", "research-topic", "research-protocol"] else infer_topic_from_citations(citations),
             markdown=result["markdown"],
             source_turn_id="direct-generation",
             citations=citations,
         )
-        _append_generation_runtime("exam", "已生成试卷：{0}".format(artifact.markdown_path))
-        _finish_generation_runtime("exam", "completed")
+        _append_generation_runtime("research-topic", "已生成选题文档：{0}".format(artifact.markdown_path))
+        _finish_generation_runtime("research-topic", "completed")
     except Exception as exc:
-        _append_generation_runtime("exam", "生成失败：{0}".format(exc))
-        _finish_generation_runtime("exam", "failed", error=str(exc))
+        _append_generation_runtime("research-topic", "生成失败：{0}".format(exc))
+        _finish_generation_runtime("research-topic", "failed", error=str(exc))
 
 
-async def _run_generate_lesson_task(active_session_id: str, payload: Dict[str, Any]) -> None:
+async def _run_generate_protocol_task(active_session_id: str, payload: Dict[str, Any]) -> None:
     del active_session_id
 
     def on_progress(text: str) -> None:
-        _append_generation_runtime("lesson-plan", text)
+        _append_generation_runtime("research-protocol", text)
 
-    _append_generation_runtime("lesson-plan", "开始读取知识库并生成备课文档。")
+    _append_generation_runtime("research-protocol", "开始读取知识库并生成研究方案。")
     try:
-        result = await agent_service.generate_lesson_plan(payload, on_progress=on_progress)
+        result = await agent_service.generate_research_protocol(payload, on_progress=on_progress)
         citations = result.get("citations", [])
         artifact = store.save_artifact(
-            artifact_type="lesson-plan",
+            artifact_type="research-protocol",
             title=result["title"],
-            topic=result["topic"] if result["topic"] not in ["", "general", "exam", "lesson-plan"] else infer_topic_from_citations(citations),
+            topic=result["topic"] if result["topic"] not in ["", "general", "research-topic", "research-protocol"] else infer_topic_from_citations(citations),
             markdown=result["markdown"],
             source_turn_id="direct-generation",
             citations=citations,
         )
-        _append_generation_runtime("lesson-plan", "已生成备课文档：{0}".format(artifact.markdown_path))
-        _finish_generation_runtime("lesson-plan", "completed")
+        _append_generation_runtime("research-protocol", "已生成研究方案：{0}".format(artifact.markdown_path))
+        _finish_generation_runtime("research-protocol", "completed")
     except Exception as exc:
-        _append_generation_runtime("lesson-plan", "生成失败：{0}".format(exc))
-        _finish_generation_runtime("lesson-plan", "failed", error=str(exc))
+        _append_generation_runtime("research-protocol", "生成失败：{0}".format(exc))
+        _finish_generation_runtime("research-protocol", "failed", error=str(exc))
 
 
 @app.post("/imports", response_class=HTMLResponse)
@@ -863,77 +863,77 @@ async def chat(
         )
 
 
-@app.post("/generate/exam", response_class=HTMLResponse)
-async def generate_exam(
+@app.post("/generate/research-topic", response_class=HTMLResponse)
+async def generate_research_topic(
     request: Request,
-    grade: str = Form(...),
-    subject: str = Form(...),
-    difficulty: str = Form(...),
-    duration: str = Form(...),
-    exam_focus: str = Form(""),
+    research_field: str = Form(...),
+    research_direction: str = Form(...),
+    novelty_level: str = Form(...),
+    expected_pages: str = Form(...),
+    research_objectives: str = Form(""),
     session_id: str = Form(""),
-    center_tab: str = Form("exam"),
+    center_tab: str = Form("topic"),
 ) -> HTMLResponse:
     active_tab = normalize_center_tab(center_tab)
     active_session_id = resolve_chat_session_id(session_id)
-    if _generation_running("exam"):
+    if _generation_running("research-topic"):
         return render_workspace(
             request,
-            error="试卷正在生成中，请稍后。",
+            error="选题文档正在生成中，请稍后。",
             session_id=active_session_id,
             center_tab=active_tab,
         )
     active_session = store.get_chat_session(active_session_id)
     payload = {
-        "grade": grade,
-        "subject": subject,
-        "difficulty": difficulty,
-        "duration": duration,
-        "exam_focus": exam_focus,
+        "research_field": research_field,
+        "research_direction": research_direction,
+        "novelty_level": novelty_level,
+        "expected_pages": expected_pages,
+        "research_objectives": research_objectives,
         "claude_session_id": active_session.claude_session_id if active_session else None,
     }
-    _initialize_generation_runtime("exam")
-    asyncio.create_task(_run_generate_exam_task(active_session_id=active_session_id, payload=payload))
+    _initialize_generation_runtime("research-topic")
+    asyncio.create_task(_run_generate_topic_task(active_session_id=active_session_id, payload=payload))
     return render_workspace(
         request,
-        success="试卷生成任务已启动。",
+        success="选题文档生成任务已启动。",
         session_id=active_session_id,
         center_tab=active_tab,
     )
 
 
-@app.post("/generate/lesson-plan", response_class=HTMLResponse)
-async def generate_lesson_plan(
+@app.post("/generate/research-protocol", response_class=HTMLResponse)
+async def generate_research_protocol(
     request: Request,
-    grade: str = Form(...),
-    subject: str = Form(...),
-    periods: str = Form(...),
-    focus: str = Form(...),
+    research_field: str = Form(...),
+    study_design: str = Form(...),
+    timeline: str = Form(...),
+    objectives: str = Form(...),
     session_id: str = Form(""),
-    center_tab: str = Form("lesson"),
+    center_tab: str = Form("protocol"),
 ) -> HTMLResponse:
     active_tab = normalize_center_tab(center_tab)
     active_session_id = resolve_chat_session_id(session_id)
-    if _generation_running("lesson-plan"):
+    if _generation_running("research-protocol"):
         return render_workspace(
             request,
-            error="备课文档正在生成中，请稍后。",
+            error="研究方案正在生成中，请稍后。",
             session_id=active_session_id,
             center_tab=active_tab,
         )
     active_session = store.get_chat_session(active_session_id)
     payload = {
-        "grade": grade,
-        "subject": subject,
-        "periods": periods,
-        "focus": focus,
+        "research_field": research_field,
+        "study_design": study_design,
+        "timeline": timeline,
+        "objectives": objectives,
         "claude_session_id": active_session.claude_session_id if active_session else None,
     }
-    _initialize_generation_runtime("lesson-plan")
-    asyncio.create_task(_run_generate_lesson_task(active_session_id=active_session_id, payload=payload))
+    _initialize_generation_runtime("research-protocol")
+    asyncio.create_task(_run_generate_protocol_task(active_session_id=active_session_id, payload=payload))
     return render_workspace(
         request,
-        success="备课文档生成任务已启动。",
+        success="研究方案生成任务已启动。",
         session_id=active_session_id,
         center_tab=active_tab,
     )

@@ -45,26 +45,26 @@ class FakeAgentService:
             "claude_session_id": claude_session_id or "claude-session-1",
         }
 
-    async def generate_exam(self, payload, on_progress=None):
+    async def generate_research_topic(self, payload, on_progress=None):
         if on_progress:
-            on_progress("exam progress")
-        assert "exam_focus" in payload
+            on_progress("topic progress")
+        assert "research_objectives" in payload
         return {
-            "title": "exam",
-            "topic": "physics",
-            "markdown": "# exam",
-            "citations": [{"title": "样例", "path": "wiki/physics/sample.md"}],
+            "title": "research-topic",
+            "topic": "cardiology",
+            "markdown": "# research topic",
+            "citations": [{"title": "样例", "path": "wiki/cardiology/sample.md"}],
         }
 
-    async def generate_lesson_plan(self, payload, on_progress=None):
+    async def generate_research_protocol(self, payload, on_progress=None):
         if on_progress:
-            on_progress("lesson progress")
+            on_progress("protocol progress")
         del payload
         return {
-            "title": "lesson-plan",
-            "topic": "physics",
-            "markdown": "# lesson",
-            "citations": [{"title": "样例", "path": "wiki/physics/sample.md"}],
+            "title": "research-protocol",
+            "topic": "cardiology",
+            "markdown": "# protocol",
+            "citations": [{"title": "样例", "path": "wiki/cardiology/sample.md"}],
         }
 
 
@@ -131,7 +131,7 @@ def test_upload_file_import_flow(monkeypatch, tmp_path):
         data={"center_tab": "import"},
     )
     assert response.status_code == 200
-    assert "导入资料" in response.text
+    assert "导入文献" in response.text
     assert "lesson.txt" in response.text
 
     deadline = time.time() + 2
@@ -155,13 +155,13 @@ def test_homepage_and_workspace_routes(monkeypatch, tmp_path):
 
     homepage = client.get("/")
     assert homepage.status_code == 200
-    assert "把备课时间" in homepage.text
+    assert "把科研整理时间" in homepage.text
     assert "试试看，很提效" in homepage.text
     assert 'href="/workspace"' in homepage.text
 
     workspace = client.get("/workspace")
     assert workspace.status_code == 200
-    assert "教师知识工作台" in workspace.text
+    assert "医学科研知识工作台" in workspace.text
 
     workspace_chat = client.get("/workspace", params={"center_tab": "chat"})
     assert workspace_chat.status_code == 200
@@ -189,13 +189,13 @@ def test_generate_without_chat_context(monkeypatch, tmp_path):
     client = TestClient(main_module.app)
 
     response = client.post(
-        "/generate/exam",
+        "/generate/research-topic",
         data={
-            "grade": "八年级",
-            "subject": "物理",
-            "difficulty": "中等",
-            "duration": "45分钟",
-            "exam_focus": "牛顿第二定律计算",
+            "research_field": "心血管内科",
+            "research_direction": "病理机制",
+            "novelty_level": "常规总结",
+            "expected_pages": "5-10页",
+            "research_objectives": "探索新的治疗靶点",
             "session_id": "default",
         },
     )
@@ -203,22 +203,22 @@ def test_generate_without_chat_context(monkeypatch, tmp_path):
     deadline = time.time() + 2
     while time.time() < deadline:
         artifacts = store.list_artifacts()
-        if artifacts and artifacts[0].artifact_type == "exam":
+        if artifacts and artifacts[0].artifact_type == "research-topic":
             break
         time.sleep(0.02)
     artifacts = store.list_artifacts()
-    assert artifacts and artifacts[0].artifact_type == "exam"
-    runtime_exam = client.get("/generate/runtime", params={"kind": "exam"})
-    assert runtime_exam.status_code == 200
-    assert "试卷过程日志" in runtime_exam.text
+    assert artifacts and artifacts[0].artifact_type == "research-topic"
+    runtime_topic = client.get("/generate/runtime", params={"kind": "research-topic"})
+    assert runtime_topic.status_code == 200
+    assert "选题文档过程" in runtime_topic.text
 
     response = client.post(
-        "/generate/lesson-plan",
+        "/generate/research-protocol",
         data={
-            "grade": "八年级",
-            "subject": "物理",
-            "periods": "1课时",
-            "focus": "受力分析",
+            "research_field": "心血管内科",
+            "study_design": "随机对照试验",
+            "timeline": "6个月",
+            "objectives": "评估疗效",
             "session_id": "default",
         },
     )
@@ -226,14 +226,14 @@ def test_generate_without_chat_context(monkeypatch, tmp_path):
     deadline = time.time() + 2
     while time.time() < deadline:
         artifacts = store.list_artifacts()
-        if any(item.artifact_type == "lesson-plan" for item in artifacts):
+        if any(item.artifact_type == "research-protocol" for item in artifacts):
             break
         time.sleep(0.02)
     artifacts = store.list_artifacts()
-    assert any(item.artifact_type == "lesson-plan" for item in artifacts)
-    runtime_lesson = client.get("/generate/runtime", params={"kind": "lesson-plan"})
-    assert runtime_lesson.status_code == 200
-    assert "备课文档过程日志" in runtime_lesson.text
+    assert any(item.artifact_type == "research-protocol" for item in artifacts)
+    runtime_protocol = client.get("/generate/runtime", params={"kind": "research-protocol"})
+    assert runtime_protocol.status_code == 200
+    assert "研究方案过程" in runtime_protocol.text
 
 
 def test_chat_runtime_hidden_after_completion(monkeypatch, tmp_path):
@@ -279,13 +279,13 @@ def test_chat_can_generate_deliverable(monkeypatch, tmp_path):
                 on_progress("output")
             return {
                 "answer_markdown": f"已根据请求生成文档：{question}",
-                "citations": [{"title": "样例", "path": "wiki/physics/sample.md"}],
+                "citations": [{"title": "样例", "path": "wiki/cardiology/sample.md"}],
                 "claude_session_id": claude_session_id or "claude-session-2",
                 "deliverable": {
-                    "type": "exam",
-                    "title": "对话生成试卷",
-                    "topic": "physics",
-                    "markdown": "# exam from chat",
+                    "type": "research-topic",
+                    "title": "对话生成选题",
+                    "topic": "cardiology",
+                    "markdown": "# topic from chat",
                 },
             }
 
@@ -294,7 +294,7 @@ def test_chat_can_generate_deliverable(monkeypatch, tmp_path):
     monkeypatch.setattr(main_module, "agent_service", DeliverableAgent())
     client = TestClient(main_module.app)
 
-    response = client.post("/chat", data={"question": "请直接生成试卷", "session_id": "default"})
+    response = client.post("/chat", data={"question": "请直接生成选题文档", "session_id": "default"})
     assert response.status_code == 200
     deadline = time.time() + 2
     while time.time() < deadline:
@@ -306,7 +306,7 @@ def test_chat_can_generate_deliverable(monkeypatch, tmp_path):
 
     artifacts = store.list_artifacts()
     assert artifacts
-    assert artifacts[0].artifact_type == "exam"
+    assert artifacts[0].artifact_type == "research-topic"
 
 
 def test_chat_answer_markdown_is_rendered(monkeypatch, tmp_path):

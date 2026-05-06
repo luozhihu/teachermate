@@ -298,7 +298,7 @@ class LocalStore:
             if len(parts) >= 3 and parts[0] == "wiki":
                 inferred_topic = parts[1]
                 break
-        raw_topic = topic if topic not in ["", "general", "exam", "lesson-plan"] else inferred_topic or "general"
+        raw_topic = topic if topic not in ["", "general", "research-topic", "research-protocol"] else inferred_topic or "general"
         topic_slug = slugify(raw_topic, fallback="general")
         target_dir = self.settings.artifacts_dir / topic_slug
         target_dir.mkdir(parents=True, exist_ok=True)

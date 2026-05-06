@@ -1,4 +1,4 @@
-# TeacherMate MVP
+# MediMate MVP
 
 ## One-command deployment
 
@@ -12,7 +12,7 @@ bash deploy/install.sh
 
 The full deployment guide is in [`deploy/README.md`](deploy/README.md).
 
-Single-user teacher knowledge base website built with FastAPI, HTMX, MarkItDown, Claude Agent SDK, and the `karpathy-llm-wiki` skill.
+Single-user medical research knowledge base website built with FastAPI, HTMX, MarkItDown, Claude Agent SDK, and the `karpathy-llm-wiki` skill.
 
 ## What it does
 
@@ -21,11 +21,11 @@ Single-user teacher knowledge base website built with FastAPI, HTMX, MarkItDown,
 - Auto-compile each import into `raw/` and `wiki/` through `karpathy-llm-wiki`
 - Show compile process output in the web UI (ephemeral, in-memory only)
 - Stream QA generation output in the chat panel (ephemeral, in-memory only)
-- Show exam/lesson generation logs below each generation button (ephemeral, in-memory only)
+- Show research topic/protocol generation logs below each generation button (ephemeral, in-memory only)
 - Ask grounded questions against the compiled wiki with switchable chat sessions
-- Generate exam drafts and lesson-plan drafts directly from wiki (independent from chat)
-- Support optional exam focus field for exam generation
-- Support generating exam/lesson-plan directly from chat intent
+- Generate research topic proposals and research protocol documents directly from wiki (independent from chat)
+- Support optional research objectives field for topic generation
+- Support generating topic/protocol directly from chat intent
 
 ## Requirements
 
@@ -52,8 +52,8 @@ Open `http://127.0.0.1:8000`.
 
 Optional compile tuning:
 
-- `TEACHERMATE_COMPILE_MAX_TURNS` (default `24`)
-- `TEACHERMATE_COMPILE_RETRY_MAX_TURNS` (default `48`)
+- `MEDIMATE_COMPILE_MAX_TURNS` (default `24`)
+- `MEDIMATE_COMPILE_RETRY_MAX_TURNS` (default `48`)
 
 These control the wiki compile step when `karpathy-llm-wiki` needs more turns.
 
@@ -63,7 +63,7 @@ These control the wiki compile step when `karpathy-llm-wiki` needs more turns.
 imports/        staged markdown sources before wiki ingest
 raw/            final raw sources written by karpathy-llm-wiki
 wiki/           compiled wiki maintained by karpathy-llm-wiki
-artifacts/      generated exams and lesson plans
+artifacts/      generated research topics and protocols
 state/          json metadata for imports, jobs, chat turns, and artifacts
 .claude/skills/ project-local Claude skills
 ```
@@ -71,3 +71,20 @@ state/          json metadata for imports, jobs, chat turns, and artifacts
 ## Deployment
 
 For a single-server production-style deployment using `systemd + nginx + Basic Auth`, see [`deploy/README.md`](deploy/README.md).
+
+
+  这个部署脚本不是常驻进程。部署完成后，真正持续运行的是：
+
+  - systemd 管理的 teachermate 服务
+  - nginx 服务
+
+  关掉当前 shell 不会把它们停掉。你可以先确认一下：
+
+  systemctl status teachermate --no-pager
+  systemctl status nginx --no-pager
+
+  如果都显示 active (running)，就可以直接退出 shell。以后需要管理时再重新登录服务器执行：
+
+  systemctl restart teachermate
+  systemctl restart nginx
+  journalctl -u teachermate -n 200 --no-pager

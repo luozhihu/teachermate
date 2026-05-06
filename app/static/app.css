@@ -264,8 +264,8 @@ p { margin: 0; line-height: var(--lh-normal); }
 }
 
 #nav-import:checked ~ .nav-rail label[for="nav-import"],
-#nav-exam:checked ~ .nav-rail label[for="nav-exam"],
-#nav-lesson:checked ~ .nav-rail label[for="nav-lesson"],
+#nav-topic:checked ~ .nav-rail label[for="nav-topic"],
+#nav-protocol:checked ~ .nav-rail label[for="nav-protocol"],
 #nav-chat:checked ~ .nav-rail label[for="nav-chat"] {
   color: #fff;
   border-color: var(--color-accent);
@@ -286,8 +286,8 @@ p { margin: 0; line-height: var(--lh-normal); }
 }
 
 #nav-import:checked ~ .center-stage .panel-import,
-#nav-exam:checked ~ .center-stage .panel-exam,
-#nav-lesson:checked ~ .center-stage .panel-lesson,
+#nav-topic:checked ~ .center-stage .panel-topic,
+#nav-protocol:checked ~ .center-stage .panel-protocol,
 #nav-chat:checked ~ .center-stage .panel-chat {
   display: block;
   animation: panelFadeIn var(--transition-base) ease forwards;

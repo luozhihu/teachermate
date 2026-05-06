@@ -2,25 +2,25 @@
   <div class="studio-shell">
     <input class="nav-toggle" type="radio" name="center-nav" id="nav-chat" {% if active_center_tab == "chat" %}checked{% endif %} />
     <input class="nav-toggle" type="radio" name="center-nav" id="nav-import" {% if active_center_tab == "import" %}checked{% endif %} />
-    <input class="nav-toggle" type="radio" name="center-nav" id="nav-exam" {% if active_center_tab == "exam" %}checked{% endif %} />
-    <input class="nav-toggle" type="radio" name="center-nav" id="nav-lesson" {% if active_center_tab == "lesson" %}checked{% endif %} />
+    <input class="nav-toggle" type="radio" name="center-nav" id="nav-topic" {% if active_center_tab == "topic" %}checked{% endif %} />
+    <input class="nav-toggle" type="radio" name="center-nav" id="nav-protocol" {% if active_center_tab == "protocol" %}checked{% endif %} />
 
     <aside class="nav-rail">
-      <p class="eyebrow">TeacherMate</p>
-      <h1>教师知识工作台</h1>
+      <p class="eyebrow">MediMate</p>
+      <h1>医学科研知识工作台</h1>
       <p class="lead">左侧导航，右侧按菜单展示对应功能。</p>
       <nav class="nav-menu">
         <label class="nav-item" for="nav-chat">对话知识库</label>
-        <label class="nav-item" for="nav-import">导入资料</label>
-        <label class="nav-item" for="nav-exam">生成试卷</label>
-        <label class="nav-item" for="nav-lesson">生成备课文档</label>
+        <label class="nav-item" for="nav-import">导入文献</label>
+        <label class="nav-item" for="nav-topic">生成选题文档</label>
+        <label class="nav-item" for="nav-protocol">生成研究方案</label>
       </nav>
     </aside>
 
     <main class="center-stage">
       <!-- ===== Import Panel ===== -->
       <article class="center-panel panel-import">
-        <h2>导入资料</h2>
+        <h2>导入文献</h2>
         {% if active_center_tab == "import" and error %}
           <p class="panel-feedback error">{{ error }}</p>
         {% endif %}
@@ -59,14 +59,14 @@
             }
           </script>
           <label>或粘贴文本</label>
-          <textarea name="pasted_text" rows="7" placeholder="把原始资料粘贴到这里"></textarea>
-          <button type="submit">导入并自动编译 <span class="spinner htmx-indicator"></span></button>
+          <textarea name="pasted_text" rows="7" placeholder="把文献内容粘贴到这里"></textarea>
+          <button type="submit">导入并自动整理 <span class="spinner htmx-indicator"></span></button>
         </form>
 
         {% include "partials/compile_runtime.html" %}
 
         <div class="list-block">
-          <h3>最近导入与自动编译（3）</h3>
+          <h3>最近导入与自动整理（3）</h3>
           {% if import_activity_rows %}
             <ul class="item-list import-activity-list">
               {% for item in import_activity_rows %}
@@ -85,55 +85,55 @@
               {% endfor %}
             </ul>
           {% else %}
-            <p class="empty">还没有导入资料。</p>
+            <p class="empty">还没有导入文献。</p>
           {% endif %}
         </div>
       </article>
 
-      <!-- ===== Exam Panel ===== -->
-      <article class="center-panel panel-exam">
-        <h2>生成试卷</h2>
-        {% if active_center_tab == "exam" and error %}
+      <!-- ===== Topic Panel ===== -->
+      <article class="center-panel panel-topic">
+        <h2>生成选题文档</h2>
+        {% if active_center_tab == "topic" and error %}
           <p class="panel-feedback error">{{ error }}</p>
         {% endif %}
-        {% if active_center_tab == "exam" and success %}
+        {% if active_center_tab == "topic" and success %}
           <p class="panel-feedback success">{{ success }}</p>
         {% endif %}
-        <form hx-post="/generate/exam" hx-target="#workspace" hx-swap="outerHTML" hx-indicator="this">
+        <form hx-post="/generate/research-topic" hx-target="#workspace" hx-swap="outerHTML" hx-indicator="this">
           <input type="hidden" name="session_id" value="{{ active_session_id }}" />
-          <input type="hidden" name="center_tab" value="exam" />
+          <input type="hidden" name="center_tab" value="topic" />
           <div class="form-group">
-            <label>年级</label>
-            <input type="text" name="grade" placeholder="年级，如 八年级" required />
+            <label>研究领域</label>
+            <input type="text" name="research_field" placeholder="研究领域，如 心血管内科" required />
           </div>
           <div class="form-group">
-            <label>学科</label>
-            <input type="text" name="subject" placeholder="学科，如 物理" required />
+            <label>研究方向</label>
+            <input type="text" name="research_direction" placeholder="研究方向，如 病理机制" required />
           </div>
           <div class="form-group">
-            <label>难度</label>
-            <input type="text" name="difficulty" placeholder="难度，如 中等" required />
+            <label>创新性要求</label>
+            <input type="text" name="novelty_level" placeholder="创新性要求，如 常规总结" required />
           </div>
           <div class="form-group">
-            <label>时长</label>
-            <input type="text" name="duration" placeholder="时长，如 45分钟" required />
+            <label>预期页数</label>
+            <input type="text" name="expected_pages" placeholder="预期页数，如 5-10页" required />
           </div>
           <div class="form-group">
-            <label>考试重点</label>
-            <input type="text" name="exam_focus" placeholder="考试重点（可选）" />
+            <label>研究目标</label>
+            <input type="text" name="research_objectives" placeholder="研究目标（可选）" />
           </div>
-          <button type="submit">基于知识库生成试卷 <span class="spinner htmx-indicator"></span></button>
+          <button type="submit">基于知识库生成选题文档 <span class="spinner htmx-indicator"></span></button>
         </form>
 
-        {% with runtime=generation_runtime.exam %}{% include "partials/generation_runtime.html" %}{% endwith %}
+        {% with runtime=generation_runtime.research_topic %}{% include "partials/generation_runtime.html" %}{% endwith %}
 
         <div class="list-block">
-          <h3>最近试卷</h3>
-          {% set exam_ns = namespace(has=false) %}
+          <h3>最近选题文档</h3>
+          {% set topic_ns = namespace(has=false) %}
           <ul class="item-list">
             {% for item in artifacts %}
-              {% if item.artifact_type == "exam" %}
-                {% set exam_ns.has = true %}
+              {% if item.artifact_type == "research-topic" %}
+                {% set topic_ns.has = true %}
                 <li>
                   <strong>{{ item.title }}</strong>
                   <span>{{ item.topic }}</span>
@@ -142,52 +142,52 @@
               {% endif %}
             {% endfor %}
           </ul>
-          {% if not exam_ns.has %}
-            <p class="empty">还没有生成试卷。</p>
+          {% if not topic_ns.has %}
+            <p class="empty">还没有生成选题文档。</p>
           {% endif %}
         </div>
       </article>
 
-      <!-- ===== Lesson Plan Panel ===== -->
-      <article class="center-panel panel-lesson">
-        <h2>生成备课文档</h2>
-        {% if active_center_tab == "lesson" and error %}
+      <!-- ===== Protocol Panel ===== -->
+      <article class="center-panel panel-protocol">
+        <h2>生成研究方案</h2>
+        {% if active_center_tab == "protocol" and error %}
           <p class="panel-feedback error">{{ error }}</p>
         {% endif %}
-        {% if active_center_tab == "lesson" and success %}
+        {% if active_center_tab == "protocol" and success %}
           <p class="panel-feedback success">{{ success }}</p>
         {% endif %}
-        <form hx-post="/generate/lesson-plan" hx-target="#workspace" hx-swap="outerHTML" hx-indicator="this">
+        <form hx-post="/generate/research-protocol" hx-target="#workspace" hx-swap="outerHTML" hx-indicator="this">
           <input type="hidden" name="session_id" value="{{ active_session_id }}" />
-          <input type="hidden" name="center_tab" value="lesson" />
+          <input type="hidden" name="center_tab" value="protocol" />
           <div class="form-group">
-            <label>年级</label>
-            <input type="text" name="grade" placeholder="年级，如 八年级" required />
+            <label>研究领域</label>
+            <input type="text" name="research_field" placeholder="研究领域，如 心血管内科" required />
           </div>
           <div class="form-group">
-            <label>学科</label>
-            <input type="text" name="subject" placeholder="学科，如 物理" required />
+            <label>研究设计类型</label>
+            <input type="text" name="study_design" placeholder="研究设计，如 随机对照试验" required />
           </div>
           <div class="form-group">
-            <label>课时</label>
-            <input type="text" name="periods" placeholder="课时，如 1课时" required />
+            <label>研究周期</label>
+            <input type="text" name="timeline" placeholder="研究周期，如 6个月" required />
           </div>
           <div class="form-group">
-            <label>教学重点</label>
-            <input type="text" name="focus" placeholder="教学重点，如 实验现象理解" required />
+            <label>研究目标</label>
+            <input type="text" name="objectives" placeholder="研究目标，如 评估疗效" required />
           </div>
-          <button type="submit">基于知识库生成备课文档 <span class="spinner htmx-indicator"></span></button>
+          <button type="submit">基于知识库生成研究方案 <span class="spinner htmx-indicator"></span></button>
         </form>
 
-        {% with runtime=generation_runtime.lesson_plan %}{% include "partials/generation_runtime.html" %}{% endwith %}
+        {% with runtime=generation_runtime.research_protocol %}{% include "partials/generation_runtime.html" %}{% endwith %}
 
         <div class="list-block">
-          <h3>最近备课文档</h3>
-          {% set lesson_ns = namespace(has=false) %}
+          <h3>最近研究方案</h3>
+          {% set protocol_ns = namespace(has=false) %}
           <ul class="item-list">
             {% for item in artifacts %}
-              {% if item.artifact_type == "lesson-plan" %}
-                {% set lesson_ns.has = true %}
+              {% if item.artifact_type == "research-protocol" %}
+                {% set protocol_ns.has = true %}
                 <li>
                   <strong>{{ item.title }}</strong>
                   <span>{{ item.topic }}</span>
@@ -196,8 +196,8 @@
               {% endif %}
             {% endfor %}
           </ul>
-          {% if not lesson_ns.has %}
-            <p class="empty">还没有生成备课文档。</p>
+          {% if not protocol_ns.has %}
+            <p class="empty">还没有生成研究方案。</p>
           {% endif %}
         </div>
       </article>
